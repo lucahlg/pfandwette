@@ -23,18 +23,23 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run update.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
       - name: Kurs alle 5 Minuten holen
         shell: bash
         run: |
           set +e
           git config user.name "kurs-bot"
           git config user.email "kurs-bot@users.noreply.github.com"
+          BR="${{ github.ref_name }}"
           for i in $(seq 1 11); do
+            # immer auf dem neuesten Stand aufsetzen (nur der Bot schreibt die Datei)
+            git fetch -q origin "$BR" && git reset -q --hard "origin/$BR"
             python3 scripts/fetch_quote.py || echo "Abruf fehlgeschlagen"
             git add data/history.json
             if ! git diff --cached --quiet; then
               git commit -q -m "Kurs-Update"
-              for try in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+              git push -q origin "HEAD:$BR" || { sleep 5; git pull -q --rebase origin "$BR" && git push -q origin "HEAD:$BR"; }
             fi
             if [ "$i" -lt 11 ]; then sleep 300; fi
           done
