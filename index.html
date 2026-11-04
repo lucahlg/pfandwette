@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pfandwette</title>
+<style>
+  :root{--bg:#0e1116;--card:#171c24;--fg:#eef1f5;--mute:#8b95a5;--up:#2ecc71;--down:#ff5c5c;--line:#262d38}
+  @media (prefers-color-scheme: light){:root{--bg:#f3f5f8;--card:#fff;--fg:#14181f;--mute:#667085;--line:#e2e6ec;--up:#12a150;--down:#e03131}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:flex;justify-content:center;padding:20px 16px}
+  main{width:100%;max-width:520px}
+  h1{font-size:1rem;font-weight:600;color:var(--mute);letter-spacing:.04em;text-transform:uppercase;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;margin-bottom:14px}
+  .hero{text-align:center}
+  .emoji{font-size:3rem;line-height:1}
+  .pl{font-size:3.2rem;font-weight:800;letter-spacing:-.02em;margin:6px 0 0;font-variant-numeric:tabular-nums}
+  .pct{font-size:1.2rem;font-weight:600;font-variant-numeric:tabular-nums}
+  .up{color:var(--up)}.down{color:var(--down)}
+  .msg{color:var(--mute);margin-top:10px;min-height:1.4em}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+  .k{color:var(--mute);font-size:.8rem}
+  .v{font-size:1.15rem;font-weight:600;font-variant-numeric:tabular-nums}
+  svg{width:100%;height:150px;display:block}
+  .foot{color:var(--mute);font-size:.78rem;text-align:center;margin-top:6px}
+  .range{display:flex;justify-content:space-between;color:var(--mute);font-size:.78rem;margin-top:4px}
+</style>
+</head>
+<body>
+<main>
+  <h1>🍼 Pfandwette · Schweden-Urlaub</h1>
+
+  <section class="card hero">
+    <div class="emoji" id="emoji">⏳</div>
+    <div class="pl" id="pl">…</div>
+    <div class="pct" id="pct"></div>
+    <div class="msg" id="msg">Lade Kurs…</div>
+  </section>
+
+  <section class="card">
+    <svg id="chart" viewBox="0 0 400 150" preserveAspectRatio="none" role="img" aria-label="Kursverlauf"></svg>
+    <div class="range"><span id="from"></span><span id="to"></span></div>
+  </section>
+
+  <section class="card grid">
+    <div><div class="k">Eingesetzt (inkl. Gebühr)</div><div class="v" id="cost">–</div></div>
+    <div><div class="k">Aktueller Wert</div><div class="v" id="value">–</div></div>
+    <div><div class="k">Kauf</div><div class="v">22 Stk. × 2,68 €</div></div>
+    <div><div class="k">Kurs jetzt (Verkauf)</div><div class="v" id="bid">–</div></div>
+    <div><div class="k">Abstand Knock-out</div><div class="v" id="ko">–</div></div>
+    <div><div class="k">Hebel</div><div class="v" id="lev">–</div></div>
+  </section>
+
+  <div class="foot">Nebius Long Turbo Open End · DE000PU1SV45<br>
+  Bewertung zum Geldkurs, ohne Verkaufsgebühr. Kein Anlagetipp – Totalverlust möglich.<br>
+  <span id="upd"></span></div>
+</main>
+
+<script>
+const QTY = 22, COST = 22 * 2.68 + 0.99; // 59,95 €
+const eur = n => n.toLocaleString("de-DE",{style:"currency",currency:"EUR"});
+const sgn = n => (n>0?"+":"")+eur(n);
+const $ = id => document.getElementById(id);
+
+function render(d){
+  const h = d.history; if(!h.length) return;
+  const last = h[h.length-1];
+  const value = last.bid * QTY, pl = value - COST, pct = pl / COST * 100;
+  const cls = pl > 0.005 ? "up" : pl < -0.005 ? "down" : "";
+  $("pl").textContent = sgn(pl); $("pl").className = "pl " + cls;
+  $("pct").textContent = (pct>0?"+":"") + pct.toFixed(1).replace(".",",") + " %"; $("pct").className = "pct " + cls;
+  $("emoji").textContent = pct >= 50 ? "🚀" : pl > 0.005 ? "😎" : pl < -0.005 ? (pct <= -50 ? "💀" : "😬") : "😐";
+  $("msg").textContent = pl > 0.005 ? "Das nächste Schweden-Bier ist gesichert 🍺"
+    : pl < -0.005 ? "Noch ist Pfand nicht verloren…" : "Genau Break-even.";
+  $("cost").textContent = eur(COST); $("value").textContent = eur(value);
+  $("bid").textContent = eur(last.bid);
+  $("ko").textContent = last.koDistance!=null ? last.koDistance.toFixed(1).replace(".",",")+" %" : "–";
+  $("lev").textContent = last.leverage ? last.leverage.toFixed(1).replace(".",",") : "–";
+  $("upd").textContent = "Kurs-Stand: " + (last.quoteTime || new Date(last.t).toLocaleString("de-DE")) + " · aktualisiert sich automatisch";
+  chart(h);
+}
+
+function chart(h){
+  const svg = $("chart"), W=400, H=150, p=8;
+  const pts = h.map(x => ({t:+new Date(x.t), v:x.bid*QTY-COST}));
+  if(pts.length<2){ svg.innerHTML='<text x="200" y="80" text-anchor="middle" fill="currentColor" opacity=".5" font-size="13">Verlauf entsteht mit den nächsten Updates</text>'; return; }
+  const t0=pts[0].t, t1=pts[pts.length-1].t;
+  const lo=Math.min(0,...pts.map(x=>x.v)), hi=Math.max(0,...pts.map(x=>x.v)), span=(hi-lo)||1;
+  const X=t=>p+(t-t0)/((t1-t0)||1)*(W-2*p), Y=v=>H-p-(v-lo)/span*(H-2*p);
+  const path = pts.map((q,i)=>(i?"L":"M")+X(q.t).toFixed(1)+" "+Y(q.v).toFixed(1)).join("");
+  const up = pts[pts.length-1].v >= 0, c = getComputedStyle(document.documentElement).getPropertyValue(up?"--up":"--down");
+  svg.innerHTML = `<line x1="0" x2="${W}" y1="${Y(0)}" y2="${Y(0)}" stroke="currentColor" opacity=".25" stroke-dasharray="4 4"/>`+
+    `<path d="${path}" fill="none" stroke="${c}" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
+  const f = t => new Date(t).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("from").textContent = f(t0); $("to").textContent = f(t1);
+}
+
+async function load(){
+  try{
+    const r = await fetch("data/history.json?"+Date.now(),{cache:"no-store"});
+    render(await r.json());
+  }catch(e){ $("msg").textContent = "Kurs gerade nicht erreichbar."; }
+}
+load(); setInterval(load, 60000);
+</script>
+</body>
+</html>
