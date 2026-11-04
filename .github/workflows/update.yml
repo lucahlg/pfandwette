@@ -1,7 +1,11 @@
 name: Kurs aktualisieren
+# Laeuft als Endlos-Kette: Jeder Lauf stoesst sofort beim Start den naechsten an
+# (wartet dank "concurrency" bis dieser fertig ist) und holt dann ~55 Minuten lang
+# alle 5 Minuten den Kurs. Faellt ein Lauf aus, ist der naechste trotzdem schon eingereiht.
+# Der Cron ist nur Sicherheitsnetz. Stoppen: Actions -> "Kurs aktualisieren" -> "Disable workflow".
 on:
   schedule:
-    - cron: "*/15 * * * *"   # Sicherheitsnetz, falls die Kette unten abreisst
+    - cron: "*/15 * * * *"
   workflow_dispatch:
 permissions:
   contents: write
@@ -12,20 +16,26 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 58
+    timeout-minutes: 62
     steps:
-      - uses: actions/checkout@v4
-      - name: Kurs alle 10 Minuten holen (ca. 50 Minuten lang)
-        run: |
-          git config user.name "kurs-bot"
-          git config user.email "kurs-bot@users.noreply.github.com"
-          for i in 1 2 3 4 5; do
-            python3 scripts/fetch_quote.py || echo "Abruf fehlgeschlagen"
-            git add data/history.json
-            git diff --cached --quiet || (git commit -m "Kurs-Update" && git pull --rebase && git push) || true
-            [ "$i" -lt 5 ] && sleep 600
-          done
-      - name: Naechsten Lauf anstossen
+      - name: Naechsten Lauf einreihen
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run update.yml --ref "${{ github.ref_name }}"
+        run: gh workflow run update.yml --repo "${{ github.repository }}" --ref "${{ github.ref_name }}"
+      - uses: actions/checkout@v4
+      - name: Kurs alle 5 Minuten holen
+        shell: bash
+        run: |
+          set +e
+          git config user.name "kurs-bot"
+          git config user.email "kurs-bot@users.noreply.github.com"
+          for i in $(seq 1 11); do
+            python3 scripts/fetch_quote.py || echo "Abruf fehlgeschlagen"
+            git add data/history.json
+            if ! git diff --cached --quiet; then
+              git commit -q -m "Kurs-Update"
+              for try in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+            fi
+            if [ "$i" -lt 11 ]; then sleep 300; fi
+          done
+          exit 0

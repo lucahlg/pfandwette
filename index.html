@@ -180,7 +180,7 @@ function render(d){
   $("bid").textContent = eur(mid(last));
   $("ko").textContent = last.koDistance!=null ? last.koDistance.toFixed(1).replace(".",",")+" %" : "–";
   $("lev").textContent = last.leverage ? last.leverage.toFixed(1).replace(".",",")+"×" : "–";
-  $("upd").textContent = "Stand: "+(last.quoteTime || new Date(last.t).toLocaleString("de-DE"))+" · lädt sich selbst neu";
+  $("upd").textContent = "Kurs vom "+(last.quoteTime || new Date(last.t).toLocaleString("de-DE"))+" · wird alle 5 Min. geprüft";
   circle(cls); chart(h);
 }
 
@@ -244,9 +244,13 @@ function chart(h){
   }
 }
 
+// Zwei Quellen: raw.githubusercontent (sofort nach Commit, max. 5 Min Cache) und die Pages-Kopie.
+// Genommen wird die neuere.
+const SOURCES = () => ["https://raw.githubusercontent.com/lucahlg/pfandwette/ccr-ffdefcee-xb9j60/data/history.json", "data/history.json?"+Date.now()];
 async function load(){
-  try{ const r=await fetch("data/history.json?"+Date.now(),{cache:"no-store"}); render(await r.json()); }
-  catch(e){ $("msg").textContent="Kurs gerade nicht erreichbar."; }
+  const got = await Promise.all(SOURCES().map(u => fetch(u,{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)));
+  const ok = got.filter(Boolean).sort((a,b)=>(b.updated||"").localeCompare(a.updated||""));
+  if(ok.length) render(ok[0]); else $("msg").textContent="Kurs gerade nicht erreichbar.";
 }
 load(); setInterval(load,60000);
 </script>
