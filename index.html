@@ -7,14 +7,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
-  :root{--paper:#f4efe3;--ink:#1d1b19;--mute:#6f685c;--up:#2f6f4f;--down:#b8362b;--hi:#f2d25c}
+  :root{--paper:#f6f1e4;--ink:#1d1b19;--mute:#6a6a63;--up:#2f6f4f;--down:#b8362b;--hi:#f5d96a;--blue:#9cc4e0;--yellow:#f6dc7a;--green:#a9cdb0;--stone:#bdb8ae}
   *{box-sizing:border-box}
-  body{margin:0;min-height:100vh;color:var(--ink);background:var(--paper);
-    background-image:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1px);background-size:14px 14px;
+  body{margin:0;min-height:100vh;color:var(--ink);background-color:var(--paper);
+    background-image:radial-gradient(circle at 0% 0%,rgba(156,196,224,.55),transparent 45%),
+      radial-gradient(circle at 100% 8%,rgba(246,220,122,.5),transparent 40%),
+      radial-gradient(circle at 50% 100%,rgba(169,205,176,.55),transparent 50%),
+      radial-gradient(rgba(0,0,0,.04) 1px,transparent 1px);
+    background-size:auto,auto,auto,14px 14px;background-attachment:fixed,fixed,fixed,scroll;
     font:22px/1.25 "Caveat","Segoe Print","Bradley Hand",cursive;display:flex;justify-content:center;padding:26px 18px 40px}
   main{width:100%;max-width:540px}
   .wob{filter:url(#rough)}
-  .box{border:2.5px solid var(--ink);border-radius:6px 14px 8px 16px;padding:18px 20px;margin-bottom:22px;background:rgba(255,255,255,.35)}
+  .box{border:2.5px solid var(--ink);border-radius:6px 14px 8px 16px;padding:18px 20px;margin-bottom:22px;background:rgba(255,255,255,.4);box-shadow:inset 0 0 30px var(--wash,transparent)}
+  .box.y{--wash:rgba(246,220,122,.55)}.box.b{--wash:rgba(156,196,224,.6)}.box.g{--wash:rgba(169,205,176,.6)}
+  .land{display:block;width:100%;height:auto;margin:0 0 20px;overflow:visible}
+  .flag{height:14px;margin:0 0 22px;display:flex;gap:0;filter:url(#rough)}
+  .flag i{flex:1;background:var(--blue);opacity:.9}.flag i:nth-child(even){background:var(--yellow)}
   h1{font-weight:700;font-size:2.1rem;margin:0 0 2px;display:flex;align-items:center;gap:10px}
   h1 svg{width:42px;height:56px;flex:none}
   .sub{color:var(--mute);margin:0 0 22px;font-size:1.15rem}
@@ -48,6 +56,14 @@
     <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="2" seed="9" result="n"/>
     <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
   </filter>
+  <filter id="wc" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="2" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="9" result="d"/>
+    <feGaussianBlur in="d" stdDeviation="1.1" result="b"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="5" result="g"/>
+    <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.4 1.25" result="ga"/>
+    <feComposite in="b" in2="ga" operator="in"/>
+  </filter>
 </svg>
 
 <main>
@@ -60,19 +76,62 @@
   </h1>
   <p class="sub">Flaschenpfand Schweden → Urlaubskasse nächstes Jahr</p>
 
-  <section class="box wob hero">
+  <svg class="land" viewBox="0 0 540 170" aria-hidden="true">
+    <!-- Aquarell-Flächen -->
+    <g filter="url(#wc)">
+      <rect x="10" y="10" width="520" height="95" rx="30" fill="#bcd8ec" opacity=".75"/>
+      <circle cx="440" cy="52" r="26" fill="#f6dc7a"/>
+      <path d="M0 110 Q90 62 170 100 T330 96 T540 104 V118 H0Z" fill="#a9cdb0"/>
+      <path d="M0 118 H540 V160 Q400 172 270 160 T0 164Z" fill="#8fbbd8" opacity=".9"/>
+      <path d="M40 150 Q120 140 200 150" stroke="#d9ebf6" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M300 142 Q380 134 470 144" stroke="#d9ebf6" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- Kiefern -->
+      <g fill="#6fa585">
+        <path d="M70 112 L52 112 L62 90 L55 90 L68 66 L81 90 L74 90 L84 112Z"/>
+        <path d="M112 112 L98 112 L106 94 L100 94 L111 74 L122 94 L116 94 L124 112Z"/>
+        <path d="M480 108 L462 108 L472 86 L465 86 L478 62 L491 86 L484 86 L494 108Z"/>
+      </g>
+      <!-- Steine -->
+      <g fill="#bdb8ae">
+        <ellipse cx="150" cy="118" rx="22" ry="11"/><ellipse cx="178" cy="122" rx="13" ry="7"/>
+        <ellipse cx="400" cy="120" rx="18" ry="9"/><ellipse cx="424" cy="123" rx="10" ry="6"/>
+      </g>
+    </g>
+    <!-- Tinte -->
+    <g class="wob" fill="none" stroke="#1d1b19" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M0 110 Q90 62 170 100 T330 96 T540 104"/>
+      <path d="M52 112 L62 90 L55 90 L68 66 L81 90 L74 90 L84 112"/>
+      <path d="M98 112 L106 94 L100 94 L111 74 L122 94 L116 94 L124 112"/>
+      <path d="M462 108 L472 86 L465 86 L478 62 L491 86 L484 86 L494 108"/>
+      <path d="M128 118 Q132 106 150 107 Q170 108 172 118"/><path d="M165 123 Q170 115 180 116 Q192 118 191 124"/>
+      <path d="M382 120 Q386 111 400 111 Q416 112 418 120"/><path d="M414 124 Q419 117 426 118 Q435 120 434 125"/>
+      <path d="M40 150 Q120 140 200 150" stroke-width="1.4"/><path d="M300 142 Q380 134 470 144" stroke-width="1.4"/>
+      <!-- Sonne -->
+      <circle cx="440" cy="52" r="26" stroke-width="1.6"/>
+      <!-- Fahne -->
+      <path d="M262 112 V70"/>
+    </g>
+    <g class="wob">
+      <rect x="262" y="66" width="38" height="24" fill="#6fa8d6" stroke="#1d1b19" stroke-width="2"/>
+      <path d="M262 78 H300 M277 66 V90" stroke="#f6dc7a" stroke-width="6"/>
+      <rect x="262" y="66" width="38" height="24" fill="none" stroke="#1d1b19" stroke-width="2"/>
+    </g>
+  </svg>
+
+
+  <section class="box wob hero y">
     <div class="lbl">bisher</div>
     <div class="pl" id="pl">…<svg id="circle" viewBox="0 0 300 80" preserveAspectRatio="none"></svg></div>
     <div class="pct" id="pct"></div>
     <div class="note" id="msg">Kurs wird geladen…</div>
   </section>
 
-  <section class="box wob chartwrap">
+  <section class="box wob chartwrap b">
     <svg id="chart" viewBox="0 0 460 230" role="img" aria-label="Gewinn und Verlust seit dem Kauf"></svg>
     <div class="legend"><span><i class="d"></i>nachgezeichnet</span><span><i></i>live gemessen</span></div>
   </section>
 
-  <section class="box wob">
+  <section class="box wob g">
     <dl>
       <dt>Einsatz (mit Gebühr)</dt><dd id="cost">–</dd>
       <dt>Wert jetzt</dt><dd id="value">–</dd>
@@ -83,6 +142,7 @@
     </dl>
   </section>
 
+  <div class="flag" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="foot">Nebius Long Turbo Open End · DE000PU1SV45<br>
     Bewertet zum Verkaufskurs, ohne Verkaufsgebühr. Der Verlauf vor dem ersten Live-Wert ist aus dem Aktienkurs nachgerechnet – nur ungefähr.<br>
     <span id="upd"></span></div>
@@ -162,6 +222,7 @@ function chart(h){
     let k=pts.findIndex(p=>p.t>=t); if(k<0)k=pts.length-1;
     const v=pts[k].v; hatch += `M${X(t).toFixed(1)} ${Y(0).toFixed(1)}L${(X(t)+4).toFixed(1)} ${Y(v).toFixed(1)}`;
   }
+  s += `<path d="M${X(t0)} ${Y(0)}${pts.map(p=>' L'+X(p.t).toFixed(1)+' '+Y(p.v).toFixed(1)).join('')} L${X(t1)} ${Y(0)}Z" fill="${col==='#2f6f4f'?'#8fc9a0':'#e9a39b'}" opacity=".55" filter="url(#wc)"/>`;
   s += `<path d="${hatch}" stroke="${col}" stroke-width="1" opacity=".35" fill="none" filter="url(#rough)"/>`;
   if(synP.length>1) s += `<path d="${seg(synP.concat(realP.slice(0,1)))}" stroke="#1d1b19" stroke-width="2.6" stroke-dasharray="6 5" fill="none" stroke-linejoin="round" stroke-linecap="round" filter="url(#rough)"/>`;
   if(realP.length>1) s += `<path d="${seg(joinP)}" stroke="#1d1b19" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round" filter="url(#rough)"/>`;
