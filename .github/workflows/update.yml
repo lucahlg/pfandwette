@@ -1,22 +1,31 @@
 name: Kurs aktualisieren
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/15 * * * *"   # Sicherheitsnetz, falls die Kette unten abreisst
   workflow_dispatch:
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: update
   cancel-in-progress: false
 jobs:
   update:
     runs-on: ubuntu-latest
+    timeout-minutes: 58
     steps:
       - uses: actions/checkout@v4
-      - run: python3 scripts/fetch_quote.py
-      - name: Commit
+      - name: Kurs alle 10 Minuten holen (ca. 50 Minuten lang)
         run: |
           git config user.name "kurs-bot"
           git config user.email "kurs-bot@users.noreply.github.com"
-          git add data/history.json
-          git diff --cached --quiet || (git commit -m "Kurs-Update" && git pull --rebase && git push)
+          for i in 1 2 3 4 5; do
+            python3 scripts/fetch_quote.py || echo "Abruf fehlgeschlagen"
+            git add data/history.json
+            git diff --cached --quiet || (git commit -m "Kurs-Update" && git pull --rebase && git push) || true
+            [ "$i" -lt 5 ] && sleep 600
+          done
+      - name: Naechsten Lauf anstossen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run update.yml --ref "${{ github.ref_name }}"
