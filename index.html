@@ -133,9 +133,10 @@
 
   <section class="box wob g">
     <dl>
-      <dt>Einsatz (mit Gebühr)</dt><dd id="cost">–</dd>
+      <dt>Einsatz beim Kauf</dt><dd id="cost">–</dd>
       <dt>Wert jetzt</dt><dd id="value">–</dd>
       <dt>Gekauft</dt><dd>22 × 2,68 €</dd>
+      <dt>Bei Verkauf jetzt*</dt><dd id="net">–</dd>
       <dt>Kurs jetzt</dt><dd id="bid">–</dd>
       <dt>Abstand bis Totalverlust</dt><dd id="ko">–</dd>
       <dt>Hebel</dt><dd id="lev">–</dd>
@@ -144,12 +145,13 @@
 
   <div class="flag" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
   <div class="foot">Nebius Long Turbo Open End · DE000PU1SV45<br>
-    Bewertet zum Verkaufskurs, ohne Verkaufsgebühr. Der Verlauf vor dem ersten Live-Wert ist aus dem Aktienkurs nachgerechnet – nur ungefähr.<br>
+    Bewertet zum Mittelkurs, wie in der Broker-App. *Zum Verkaufskurs und nach 0,99 € Kaufgebühr, ohne Verkaufsgebühr. Der Verlauf vor dem ersten Live-Wert ist aus dem Aktienkurs nachgerechnet – nur ungefähr.<br>
     <span id="upd"></span></div>
 </main>
 
 <script>
-const QTY = 22, COST = 22 * 2.68 + 0.99; // 59,95 €
+const QTY = 22, COST = 22 * 2.68, FEE = 0.99; // Einstand 58,96 € (wie in der Broker-App), Gebühr extra
+const mid = x => x.ask ? (x.bid + x.ask) / 2 : x.bid + 0.02; // Mittelkurs wie in der App
 const eur = n => n.toLocaleString("de-DE",{style:"currency",currency:"EUR"});
 const sgn = n => (n>0?"+":n<0?"−":"")+eur(Math.abs(n));
 const $ = id => document.getElementById(id);
@@ -165,7 +167,7 @@ function sketchy(x1,y1,x2,y2,j=1.6){
 function render(d){
   const h = d.history; if(!h.length) return;
   const last = [...h].reverse().find(x=>!x.syn) || h[h.length-1];
-  const value = last.bid*QTY, pl = value-COST, pct = pl/COST*100;
+  const value = mid(last)*QTY, pl = value-COST, pct = pl/COST*100, net = last.bid*QTY-COST-FEE;
   const cls = pl>0.005 ? "up" : pl<-0.005 ? "down" : "";
   $("pl").firstChild.textContent = sgn(pl);
   $("pl").className = "pl "+cls;
@@ -173,9 +175,9 @@ function render(d){
   $("pct").className = "pct "+cls;
   $("msg").innerHTML = pl>0.005 ? "Läuft. Das erste Bier <mark>geht aufs Haus</mark>."
     : pl<-0.005 ? "Noch nicht schlimm. <mark>Pfand ist nicht weg</mark>, nur unterwegs." : "Auf den Cent genau Pfand zurück.";
-  $("cost").textContent = eur(COST);
+  $("cost").textContent = eur(COST); $("net").textContent = sgn(net);
   $("value").textContent = eur(value);
-  $("bid").textContent = eur(last.bid);
+  $("bid").textContent = eur(mid(last));
   $("ko").textContent = last.koDistance!=null ? last.koDistance.toFixed(1).replace(".",",")+" %" : "–";
   $("lev").textContent = last.leverage ? last.leverage.toFixed(1).replace(".",",")+"×" : "–";
   $("upd").textContent = "Stand: "+(last.quoteTime || new Date(last.t).toLocaleString("de-DE"))+" · lädt sich selbst neu";
@@ -197,7 +199,7 @@ function circle(cls){
 function chart(h){
   seed = 11;
   const svg=$("chart"), W=460, H=230, L=48, R=14, T=16, B=34;
-  const pts = h.map(x=>({t:+new Date(x.t), v:x.bid*QTY-COST, syn:!!x.syn}));
+  const pts = h.map(x=>({t:+new Date(x.t), v:mid(x)*QTY-COST, syn:!!x.syn}));
   const t0=pts[0].t, t1=pts[pts.length-1].t || t0+1;
   let lo=Math.min(0,...pts.map(p=>p.v)), hi=Math.max(0,...pts.map(p=>p.v));
   const pad=(hi-lo)*.12||1; lo-=pad; hi+=pad;
